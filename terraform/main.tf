@@ -1,25 +1,36 @@
-# 1. Define the Provider
-provider "aws" {
-  region = "us-east-1"
-}
-
-# 2. Create a Random ID for unique bucket naming
-resource "random_id" "bucket_suffix" {
-  byte_length = 4
-}
-
-# 3. Create the S3 Bucket
-resource "aws_s3_bucket" "vault_test_bucket" {
-  bucket = "devsecops-vault-demo-${random_id.bucket_suffix.hex}"
-
-  tags = {
-    Name        = "Vault Dynamic Secret Test"
-    Environment = "Dev"
-    ManagedBy   = "Terraform"
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
-# 4. (Optional) Output the bucket name so you can see it in GitHub logs
-output "bucket_name" {
-  value = aws_s3_bucket.vault_test_bucket.id
+provider "azurerm" {
+  features {}
+  # env-based auth: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID
+}
+
+resource "random_string" "suffix" {
+  length  = 6
+  upper   = false
+  special = false
+}
+
+resource "azurerm_resource_group" "rg" {
+  name     = "vault-demo-rg-${random_string.suffix.result}"
+  location = "West Europe"
+}
+
+resource "azurerm_storage_account" "sa" {
+  name                     = "vdemostg${random_string.suffix.result}"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
 }
