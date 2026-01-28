@@ -1,7 +1,7 @@
 - name: Fetch Azure creds from Vault
   uses: hashicorp/vault-action@v3
   with:
-    url: http://<YOUR_EC2_IP>:8200
+    url: http://104.211.113.12:8200
     role: gh-actions-role
     method: jwt
     secrets: |
