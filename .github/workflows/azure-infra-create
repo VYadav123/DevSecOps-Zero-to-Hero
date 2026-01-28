@@ -1,13 +1,5 @@
-# GitHub Actions workflow: Terraform deploy using Vault (Azure creds)
-# - Fetches short-lived Azure SP credentials from Vault via JWT (OIDC)
-# - Exposes them as ARM_* env vars for Terraform
-# Replace http://104.211.113.12:8200 with your Vault address (use TLS in prod).
-on:
-  push:
-    branches:
-      - main
-
-name: Terraform Deployment
+name: Terraform Deployment (Azure via Vault)
+on: [push]
 
 permissions:
   id-token: write
@@ -21,32 +13,23 @@ jobs:
         working-directory: ./terraform
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
+      # Fetch short-lived Azure SP creds from Vault (Azure secrets engine)
       - name: Fetch Azure creds from Vault
         uses: hashicorp/vault-action@v3
-        id: vault
         with:
-          url: http://<YOUR_EC2_IP>:8200
-          role: gh-actions-role
+          url: http://104.211.113.12:8200
           method: jwt
-          # Map Vault response fields to environment variables for subsequent steps
+          role: gh-actions-role
           secrets: |
-            azure/creds/terraform-role client_id   | ARM_CLIENT_ID ;
+            azure/creds/terraform-role client_id | ARM_CLIENT_ID ;
             azure/creds/terraform-role client_secret | ARM_CLIENT_SECRET ;
-            azure/creds/terraform-role subscription_id | ARM_SUBSCRIPTION_ID ;
-            azure/creds/terraform-role tenant_id   | ARM_TENANT_ID
+            azure/creds/terraform-role tenant_id | ARM_TENANT_ID ;
+            azure/creds/terraform-role subscription_id | ARM_SUBSCRIPTION_ID
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: terraform init -input=false
-
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan -input=false
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -input=false tfplan
+      - run: terraform init
+      - run: terraform plan
+      - run: terraform apply -auto-approve
