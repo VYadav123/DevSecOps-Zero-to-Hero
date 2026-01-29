@@ -1,4 +1,4 @@
-name: Terraform Deployment (Azure via Vault)
+name: Azure Terraform Deployment
 on: [push]
 
 permissions:
@@ -8,28 +8,25 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./terraform
-
     steps:
       - uses: actions/checkout@v4
 
-      # Fetch short-lived Azure SP creds from Vault (Azure secrets engine)
-      - name: Fetch Azure creds from Vault
+      - name: Fetch Azure Credentials from Vault
         uses: hashicorp/vault-action@v3
         with:
-          url: http://104.211.113.12:8200
-          method: jwt
+          url: http://<YOUR_VM_IP>:8200
           role: gh-actions-role
+          method: jwt
           secrets: |
             azure/creds/terraform-role client_id | ARM_CLIENT_ID ;
-            azure/creds/terraform-role client_secret | ARM_CLIENT_SECRET ;
-            azure/creds/terraform-role tenant_id | ARM_TENANT_ID ;
-            azure/creds/terraform-role subscription_id | ARM_SUBSCRIPTION_ID
+            azure/creds/terraform-role client_secret | ARM_CLIENT_SECRET
+
+      - name: Set Azure Env Vars
+        run: |
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
 
       - uses: hashicorp/setup-terraform@v3
-
       - run: terraform init
       - run: terraform plan
       - run: terraform apply -auto-approve
