@@ -15,11 +15,23 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Set VAULT_ADDR
+        run: echo "VAULT_ADDR=http://20.244.121.53:8200" >> $GITHUB_ENV
+    
+      - name: Vault health & role metadata (debug)
+        run: |
+          echo "VAULT_ADDR=${VAULT_ADDR}"
+          echo "== Vault health =="
+          curl -sS -w "\nHTTP_STATUS:%{http_code}\n" "${VAULT_ADDR}/v1/sys/health" || true
+          echo "== JWT role metadata (auth/jwt/role/gh-actions-role) =="
+          curl -sS -w "\nHTTP_STATUS:%{http_code}\n" "${VAULT_ADDR}/v1/auth/jwt/role/gh-actions-role" || true
+        # Note: VAULT_ADDR written to $GITHUB_ENV in the previous step is available here
 
       - name: Fetch Azure Credentials from Vault
         uses: hashicorp/vault-action@v3
         with:
-          url: http://20.244.121.53:8200
+          url: ${{ env.VAULT_ADDR }}
           role: gh-actions-role
           method: jwt
           secrets: |
