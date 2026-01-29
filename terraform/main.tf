@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "example" {
-  name     = "vault-demo-rg1"
+  name     = "vault-demo-rg"
   location = "East US"
 }
 
