@@ -14,7 +14,7 @@ jobs:
       - name: Fetch Azure Credentials from Vault
         uses: hashicorp/vault-action@v3
         with:
-          url: http://<YOUR_VM_IP>:8200
+          url: http://20.244.121.53:8200
           role: gh-actions-role
           method: jwt
           secrets: |
