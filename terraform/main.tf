@@ -4,7 +4,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "example" {
   name     = "vault-demo-rg"
-  location = "East US"
+  location = "Central India"
 }
 
 resource "azurerm_storage_account" "example" {
